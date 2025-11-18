@@ -7,8 +7,8 @@ class Biblioteca:
     """Modelo de biblioteca"""
 
     def __init__(self) -> None:
-        self.libros = []
-        self.miembros = []
+        self.libros: List[Libro] = []
+        self.miembros: List[Miembro] = []
 
     # ===== MÉTODOS BÁSICOS =====
 
