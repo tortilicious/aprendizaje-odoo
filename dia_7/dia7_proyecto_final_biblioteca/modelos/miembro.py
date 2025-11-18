@@ -1,4 +1,4 @@
-from libro import Libro
+from .libro import Libro
 
 class Miembro:
     """Modelo de Miembro con Type Hints"""

@@ -1,7 +1,6 @@
 from typing import List, Optional
-
-from libro import Libro
-from miembro import Miembro
+from .libro import Libro
+from .miembro import Miembro
 
 
 class Biblioteca:
