@@ -3,7 +3,7 @@
 from typing import List, Dict, Optional
 
 # Función 1: Recibe lista de números, retorna el máximo
-def encontrar_maximo(numeros: List[int]) -> int:
+def encontrar_maximo(numeros: List[int]) -> Optional[int]:
     return max(numeros) if numeros else None
 
 # Función 2: Recibe diccionario, retorna lista de claves
