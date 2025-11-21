@@ -1,0 +1,3 @@
+
+IVA: float = 1.21
+FACTOR_CONVERSION_PUNTOS: int = 10
