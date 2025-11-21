@@ -1,9 +1,10 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
+from config import IVA, FACTOR_CONVERSION_PUNTOS
 from models.estado_pedido import EstadoPedido
 from models.producto import Producto
-from config import IVA, FACTOR_CONVERSION_PUNTOS
-from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from models.cliente import Cliente
 
@@ -20,7 +21,6 @@ class Pedido:
         fecha_creacion: Registra la hora a la que se crea el pedido
     """
     _id: int = 0
-
 
     def __init__(self, cliente: 'Cliente') -> None:
         """
@@ -67,7 +67,7 @@ class Pedido:
         """
         return (self.subtotal - self.descuento_aplicado) * IVA
 
-    def agregar_producto(self, producto: Producto, cantidad: int)-> None:
+    def agregar_producto(self, producto: Producto, cantidad: int) -> None:
         """
         Agrega un producto al pedido.
         Args:
@@ -97,20 +97,42 @@ class Pedido:
         """
         self.estado = nuevo_estado
 
-    def generar_factura(self):
+    def generar_factura(self) -> str:
         """
         Genera una factura para el pedido.
+
         Returns:
-            String formateado con detalles de la factura del pedido.
+            String formateado con:
+            - ID del pedido
+            - Información del cliente
+            - Listado de productos con cantidades y precios
+            - Subtotal, descuento aplicado, IVA
+            - Total final
+            - Puntos ganados
         """
-        return f"""
-        id_Pedido: {self.id}
-        {self.cliente.__repr__()}
-        Productos: {self.productos}
-        Subtotal: {self.subtotal}$
-        Descuento: {self.descuento_aplicado}$
-        IVA: {IVA}
-        Total: {self.total}$
-        
-        Puntos ganados: {int(self.subtotal / FACTOR_CONVERSION_PUNTOS)}
-"""
+        factura = f"""
+    ================== FACTURA ==================
+    ID Pedido: {self.id}
+    Cliente: {self.cliente}
+    ==========================================
+
+    """
+
+        # Acumular líneas de productos
+        for producto, cantidad in self.productos.items():
+            subtotal_producto = producto.precio * cantidad
+            linea = f"{producto.nombre}: {cantidad} x ${producto.precio} = ${subtotal_producto}\n"
+            factura += linea
+
+        # Añadir totales
+        factura += f"""
+    ==========================================
+    Subtotal: ${self.subtotal:.2f}
+    Descuento ({self.cliente.descuento * 100}%): -${self.descuento_aplicado:.2f}
+    IVA ({(IVA - 1) * 100}%): ${(self.subtotal - self.descuento_aplicado) * (IVA - 1):.2f}
+    Total: ${self.total:.2f}
+
+    Puntos ganados: {int(self.subtotal / FACTOR_CONVERSION_PUNTOS)}
+    ==========================================
+    """
+        return factura
