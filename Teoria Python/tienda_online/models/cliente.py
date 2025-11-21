@@ -1,6 +1,8 @@
 from models.nivel_cliente import NivelCliente
-from models.pedido import Pedido
 from config import FACTOR_CONVERSION_PUNTOS
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from models.pedido import Pedido
 
 
 class Cliente:
@@ -32,7 +34,7 @@ class Cliente:
         self.id: int = Cliente._id
         self.nombre: str = nombre
         self.email: str = email
-        self.pedidos: list[Pedido] = []
+        self.pedidos: list['Pedido'] = []
 
     def __repr__(self):
         return f"""
@@ -79,7 +81,7 @@ class Cliente:
         """
         return int(sum(pedido.total for pedido in self.pedidos) / FACTOR_CONVERSION_PUNTOS)
 
-    def agregar_pedido(self, pedido: Pedido) -> None:
+    def agregar_pedido(self, pedido: 'Pedido') -> None:
         if len(pedido.productos) == 0:
             raise ValueError("No se puede agregar pedidos sin productos")
         self.pedidos.append(pedido)
