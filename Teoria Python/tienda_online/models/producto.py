@@ -35,9 +35,9 @@ class Producto:
         Producto._id += 1
 
         self.id: int = Producto._id
-        self.nombre: str = nombre
-        self.precio: float = precio
-        self.categoria: str = categoria
+        self._nombre: str = nombre
+        self._precio: float = precio
+        self._categoria: str = categoria
         self.stock: int = 0
         self.fecha_creacion: datetime = datetime.now()
 
@@ -48,6 +48,37 @@ class Producto:
             Categoria: {self.categoria}
             Stock: {self.stock}
         """
+
+    @property
+    def nombre(self):
+        return self._nombre
+
+    @nombre.setter
+    def nombre(self, nuevo_nombre):
+        if not nuevo_nombre:
+            raise ValueError("El campo de nombre no puede estar vacío")
+        self._nombre = nuevo_nombre
+
+    @property
+    def precio(self):
+        return self._precio
+
+    @precio.setter
+    def precio(self, nuevo_precio):
+        if nuevo_precio < 0:
+            raise ValueError("El precio no puede ser negativo")
+        self._precio = nuevo_precio
+
+    @property
+    def categoria(self):
+        return self._categoria
+
+    @categoria.setter
+    def categoria(self, nueva_categoria):
+        if not nueva_categoria:
+            raise ValueError("El campo de categoría no puede estar vacio")
+        self._categoria = nueva_categoria
+
 
     @property
     def precio_con_iva(self) -> float:
