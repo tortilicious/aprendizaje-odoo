@@ -15,6 +15,7 @@
             <list string="Properties">
                 <field name="name"/>
                 <field name="postcode"/>
+                <field name="property_type_id"/>
                 <field name="bedrooms"/>
                 <field name="living_area"/>
                 <field name="expected_price"/>
@@ -31,13 +32,18 @@
         <field name="arch" type="xml">
             <form>
                 <sheet>
+                    <h1>
+                        <field name="name"/>
+                    </h1>
+                    <field name="tag_ids" widget="many2many_tags"/>
+                    <separator/>
                     <group>
                         <group>
-                            <field name="name"/>
                             <field name="postcode"/>
                             <field name="date_availability"/>
                         </group>
                         <group>
+                            <field name="property_type_id"/>
                             <field name="expected_price"/>
                             <field name="selling_price"/>
                         </group>
@@ -54,6 +60,12 @@
                                 <field name="garden"/>
                                 <field name="garden_area"/>
                                 <field name="garden_orientation"/>
+                            </group>
+                        </page>
+                        <page string="Other info">
+                            <group>
+                                <field name="buyer_id"/>
+                                <field name="seller_id"/>
                             </group>
                         </page>
                     </notebook>
@@ -109,16 +121,21 @@
               sequence="10"/>
 
     <!-- Primer nivel -->
-    <menuitem id="estate_property_first_level_menu"
+    <menuitem id="estate_property_advertisements_menu"
               name="Advertisements"
               parent="estate_property_menu_root"
               sequence="10"/>
+
+    <menuitem id="estate_property_settings_menu"
+              name="Settings"
+              parent="estate_property_menu_root"
+              sequence="20"/>
 
     <!-- Segundo nivel (abre la acción) -->
     <menuitem id="estate_property_second_level_menu"
               name="Properties"
               action="estate_property_action"
-              parent="estate_property_first_level_menu"
+              parent="estate_property_advertisements_menu"
               sequence="10"/>
 
 </odoo>

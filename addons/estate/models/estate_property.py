@@ -7,14 +7,30 @@ class EstateProperty(models.Model):
     _name = "estate.property"
     _description = "Estate Property"
 
-    property_type_id = fields.One2many()
+    property_type_id = fields.Many2one(
+        comodel_name="estate.property.type",
+        string="Property Type",
+    )
+
+    buyer_id = fields.Many2one(
+        comodel_name="res.partner", string="Buyer", index=True, copy=False
+    )
+
+    seller_id = fields.Many2one(
+        comodel_name="res.users", string="Salesperson", index=True, default=lambda self: self.env.user
+    )
+
+    tag_ids = fields.Many2many(
+        comodel_name="estate.property.tag",
+        string="Property Tags",
+        required=True,
+    )
+
     name = fields.Char(string="Title", required=True)
     description = fields.Text()
     postcode = fields.Char()
     date_availability = fields.Date(
-        string="Available From",
-        copy=False,
-        default=lambda self: fields.Date.today() + timedelta(days=90)
+        string="Available From", copy=False, default=lambda self: fields.Date.today() + timedelta(days=90)
     )
     expected_price = fields.Float(required=True)
     selling_price = fields.Float(readonly=True, copy=False)

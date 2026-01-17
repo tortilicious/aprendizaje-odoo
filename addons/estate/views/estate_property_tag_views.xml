@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Acción -->
+    <record id="estate_property_tag_action" model="ir.actions.act_window">
+        <field name="name">Property tags</field>
+        <field name="res_model">estate.property.tag</field>
+        <field name="view_mode">form,list</field>
+    </record>
+
+    <!-- Vista Form -->
+    <record id="estate_property_tag_form" model="ir.ui.view">
+        <field name="name">estate.property.tag.form</field>
+        <field name="model">estate.property.tag</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <field name="name"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vista List -->
+    <record id="estate_property_tag_list" model="ir.ui.view">
+        <field name="name">estate.property.tag.list</field>
+        <field name="model">estate.property.tag</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Primer nivel -->
+    <menuitem id="estate_property_tags_sub_menu"
+              name="Property Tags"
+              action="estate_property_tag_action"
+              parent="estate_property_settings_menu"
+              sequence="20"/>
+
+</odoo>
