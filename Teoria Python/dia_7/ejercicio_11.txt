@@ -1,9 +1,0 @@
-¿Por qué proyecto_completo/ es un "paquete" y no solo una carpeta?
-¿Qué propósito tiene __init__.py?
-Si quisieras importar Producto desde modelos.py en otro archivo, ¿cómo lo harías?
-¿Cuál es la ventaja de separar código en múltiples archivos vs tenerlo todo en uno?
-
-1.- porque contiene el archivo __init__.py
-2.- decirle al programa que es se trata de un paquete python en lugar de un archivo cualquiera. ademas podemos incluir codigo que se ejecuta cuando importamos este paquete.
-3.- from .modelos import Producto
-4.- el código es más claro, ayuda a la implementación y mantenimiento del mismo.
