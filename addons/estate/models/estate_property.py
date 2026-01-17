@@ -12,9 +12,7 @@ class EstateProperty(models.Model):
         string="Property Type",
     )
 
-    buyer_id = fields.Many2one(
-        comodel_name="res.partner", string="Buyer", index=True, copy=False
-    )
+    buyer_id = fields.Many2one(comodel_name="res.partner", string="Buyer", index=True, copy=False)
 
     seller_id = fields.Many2one(
         comodel_name="res.users", string="Salesperson", index=True, default=lambda self: self.env.user
@@ -23,7 +21,12 @@ class EstateProperty(models.Model):
     tag_ids = fields.Many2many(
         comodel_name="estate.property.tag",
         string="Property Tags",
-        required=True,
+    )
+
+    offer_ids = fields.One2many(
+        comodel_name="estate.property.offer",
+        inverse_name="property_id",
+        string="Offers",
     )
 
     name = fields.Char(string="Title", required=True)
