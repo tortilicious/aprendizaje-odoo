@@ -58,7 +58,9 @@ class EstateProperty(models.Model):
             ("offer_accepted", "Offer accepted"),
             ("sold", "Sold"),
             ("cancelled", "Cancelled"),
-        ]
+        ],
+        string="Status",
+        default="new",
     )
     active = fields.Boolean(default=True)
 
@@ -70,7 +72,6 @@ class EstateProperty(models.Model):
     def _compute_total_area(self):
         for record in self:
             record.total_area = record.living_area + record.garden_area
-
 
     best_price = fields.Integer(compute="_compute_best_price", string="Best Offer")
 
@@ -87,3 +88,12 @@ class EstateProperty(models.Model):
         else:
             self.garden_area = 0
             self.garden_orientation = None
+
+    # Buttons functions
+    def action_sell(self):
+        if self.state != "cancelled":
+            self.state = "sold"
+
+    def action_cancel(self):
+        if self.state != "sold":
+            self.state = "cancelled"
