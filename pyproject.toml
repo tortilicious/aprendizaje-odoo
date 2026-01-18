@@ -36,4 +36,15 @@ known-first-party = ["odoo", "odoo.addons"]
 
 # Configuración de ty según documentación oficial
 [tool.ty.rules]
-unresolved-import = "ignore"  # Ignora imports no resueltos (como odoo)
+
+# Ignora imports no resueltos (como odoo)
+unresolved-import = "ignore"
+
+# Ignora atributos dinámicos (campos de Odoo que se transforman en runtime)
+attr-defined = "ignore"
+
+# Ignora asignaciones a atributos que no se pueden inferir
+no-untyped-def = "ignore"
+
+# Ignora llamadas a funciones sin type hints (común en Odoo)
+no-untyped-call = "ignore"

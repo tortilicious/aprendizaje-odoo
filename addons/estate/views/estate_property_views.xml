@@ -34,10 +34,12 @@
                 <header>
                     <button name="action_sell"
                             type="object"
-                            string="SOLD"/>
+                            string="SOLD"
+                            invisible="state in ['sold', 'cancelled']"/>
                     <button name="action_cancel"
                             type="object"
-                            string="CANCEL"/>
+                            string="CANCEL"
+                            invisible="state in ['sold', 'cancelled']"/>
                 </header>
                 <sheet>
                     <h1>
@@ -74,7 +76,7 @@
                             </group>
                         </page>
                         <page string="Offers">
-                            <field name="offer_ids"/>
+                            <field name="offer_ids" readonly="state in ['sold', 'cancelled']"/>
                         </page>
                         <page string="Other info">
                             <group>

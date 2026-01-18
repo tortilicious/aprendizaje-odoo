@@ -11,3 +11,13 @@ class EstatePropertyType(models.Model):
         string="Properties"
     )
     name = fields.Char(required=True)
+
+    # SQL CONSTRAINTS
+    _sql_constraints = [
+        # No puede haber dos tipos de propiedad con el mismo nombre
+        (
+            "unique_property_type_name",
+            "UNIQUE(name)",
+            "A property type with this name already exists. Property type names must be unique.",
+        ),
+    ]
