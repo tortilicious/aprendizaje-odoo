@@ -44,6 +44,11 @@ POSTGRES_PASSWORD=odoo
 ODOO_PORT=8069
 ODOO_ADMIN_EMAIL=admin@ejemplo.com
 ODOO_ADMIN_PASSWORD=admin
+
+# Gestión automática de módulos
+ODOO_AUTO_INSTALL=true
+ODOO_AUTO_UPDATE=true
+ODOO_DEV_MODULES=
 ```
 
 Las variables `ODOO_IMAGE` y `POSTGRES_IMAGE` definen qué versiones de las imágenes Docker se utilizarán. Esto facilita actualizar las versiones en el futuro sin modificar el archivo `docker-compose.yml`. Las variables `ODOO_CONTAINER_NAME` y `POSTGRES_CONTAINER_NAME` permiten personalizar los nombres de los contenedores para identificarlos fácilmente.
@@ -51,6 +56,16 @@ Las variables `ODOO_IMAGE` y `POSTGRES_IMAGE` definen qué versiones de las imá
 La variable `POSTGRES_DB` define el nombre de la base de datos que se creará e inicializará automáticamente. Esta misma base de datos será utilizada por Odoo para almacenar todos los datos de la aplicación.
 
 Las variables `ODOO_ADMIN_EMAIL` y `ODOO_ADMIN_PASSWORD` permiten configurar las credenciales del usuario administrador que se creará durante la inicialización. Estas credenciales serán las que uses para acceder a Odoo por primera vez. Se recomienda cambiar los valores por defecto, especialmente la contraseña, por valores más seguros antes de levantar los servicios por primera vez.
+
+Las variables de gestión automática de módulos controlan cómo se manejan los módulos en la carpeta `addons/` al arrancar Odoo:
+
+| Variable | Descripción |
+|----------|-------------|
+| `ODOO_AUTO_INSTALL` | Si es `true`, instala automáticamente módulos nuevos de `addons/` que no estén instalados en Odoo |
+| `ODOO_AUTO_UPDATE` | Si es `true`, detecta módulos con archivos modificados después de su última actualización en Odoo y los actualiza automáticamente |
+| `ODOO_DEV_MODULES` | Lista de módulos (separados por coma) que se actualizarán SIEMPRE al reiniciar, independientemente de si tienen cambios |
+
+Esta funcionalidad es especialmente útil cuando trabajas con repositorios compartidos: después de hacer `git pull` y recibir cambios en módulos, simplemente ejecuta `docker compose restart odoo` y los módulos modificados se actualizarán automáticamente.
 
 ### 3. Dar Permisos al Script de Inicialización
 
@@ -115,9 +130,19 @@ odoo18-docker/
 
 ### Script de Inicialización (entrypoint.sh)
 
-El archivo `entrypoint.sh` es un script de bash que automatiza la configuración inicial de Odoo. Su funcionamiento es el siguiente: primero espera a que PostgreSQL esté completamente disponible, luego verifica si la base de datos contiene tablas. Si la base de datos está vacía (primera ejecución), ejecuta Odoo con el flag `-i base` para instalar el módulo base y todas sus dependencias. Después de la instalación, el script actualiza el email del usuario administrador mediante una consulta SQL y configura la contraseña usando el shell interactivo de Odoo (ya que las contraseñas se almacenan hasheadas). Si la base de datos ya tiene tablas (ejecuciones posteriores), salta la inicialización y arranca Odoo directamente.
+El archivo `entrypoint.sh` es un script de bash que automatiza la configuración inicial de Odoo y la gestión de módulos. Su funcionamiento es el siguiente:
 
-Este enfoque permite una experiencia de "un solo comando" donde ejecutas `docker compose up` y todo se configura automáticamente, incluyendo las credenciales del administrador, sin necesidad de pasos manuales adicionales.
+**Primera ejecución (base de datos vacía):**
+1. Espera a que PostgreSQL esté completamente disponible
+2. Detecta que la base de datos está vacía e instala el módulo base
+3. Configura las credenciales del administrador (`ODOO_ADMIN_EMAIL`, `ODOO_ADMIN_PASSWORD`)
+
+**Cada arranque (gestión automática de módulos):**
+1. Si `ODOO_AUTO_INSTALL=true`: detecta módulos en `addons/` que no estén instalados en Odoo y los instala
+2. Si `ODOO_AUTO_UPDATE=true`: compara la fecha de modificación de archivos (`.py`, `.xml`, `.csv`, `.js`, `.css`, `.scss`) con la fecha de última actualización del módulo en Odoo (`write_date`). Si hay archivos más recientes, marca el módulo para actualización
+3. Si `ODOO_DEV_MODULES` contiene módulos, los añade a la lista de actualización
+
+Este enfoque permite una experiencia de "un solo comando" donde ejecutas `docker compose up` y todo se configura automáticamente. Además, facilita el trabajo en equipo: después de un `git pull` con cambios en módulos, un simple `docker compose restart odoo` actualiza automáticamente los módulos modificados.
 
 ### Carpeta addons
 

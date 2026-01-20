@@ -34,7 +34,7 @@ docker compose down -v && docker compose up -d
 - `odoo`: Odoo application server (image version via `$ODOO_IMAGE`)
 
 **Key Files:**
-- `entrypoint.sh`: Custom entrypoint that handles first-run initialization (installs base module, sets admin credentials) and auto-installs/updates modules listed in `$ODOO_DEV_MODULES` (uses `-i` flag which installs if not present, updates if already installed)
+- `entrypoint.sh`: Custom entrypoint that handles first-run initialization (installs base module, sets admin credentials) and automatic module management via `ODOO_AUTO_INSTALL`, `ODOO_AUTO_UPDATE`, and `ODOO_DEV_MODULES`
 - `odoo.conf`: Odoo configuration optimized for development
 - `postgresql.conf`: PostgreSQL configuration optimized for performance
 - `.env`: Environment variables for credentials and image versions (copy from `.env.example`)
@@ -51,7 +51,13 @@ docker compose down -v && docker compose up -d
 1. Create modules in `addons/` directory (each module needs `__init__.py` and `__manifest__.py`)
 2. XML changes are hot-reloaded (dev mode enabled)
 3. Python changes require `docker compose restart odoo`
-4. To auto-update specific modules on restart, set `ODOO_DEV_MODULES=module1,module2` in `.env`
+
+**Automatic Module Management (in `.env`):**
+| Variable | Description |
+|----------|-------------|
+| `ODOO_AUTO_INSTALL=true` | Auto-install new modules from `addons/` not yet installed in Odoo |
+| `ODOO_AUTO_UPDATE=true` | Auto-update modules with files modified after last Odoo update |
+| `ODOO_DEV_MODULES=mod1,mod2` | Always update these modules on restart (manual override) |
 
 **Database Access:**
 - PostgreSQL exposed on port 5432 for external tools
