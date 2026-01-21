@@ -12,6 +12,10 @@ Docker-based development environment for Odoo ERP with PostgreSQL. Uses Docker C
 # Start services (first run initializes DB and admin user)
 docker compose up -d
 
+# Rebuild image (required after changes to Dockerfile or requirements.txt)
+docker compose build odoo
+docker compose up -d --build      # Build and start in one command
+
 # View logs
 docker compose logs -f odoo       # Odoo logs
 docker compose logs -f db         # PostgreSQL logs
@@ -34,16 +38,19 @@ docker compose down -v && docker compose up -d
 - `odoo`: Odoo application server (image version via `$ODOO_IMAGE`)
 
 **Key Files:**
-- `entrypoint.sh`: Custom entrypoint that handles first-run initialization (installs base module, sets admin credentials) and automatic module management via `ODOO_AUTO_INSTALL`, `ODOO_AUTO_UPDATE`, and `ODOO_DEV_MODULES`
-- `odoo.conf`: Odoo configuration optimized for development
-- `postgresql.conf`: PostgreSQL configuration optimized for performance
+- `Dockerfile`: Custom Odoo image with uv package manager and Python dependencies from `addons/requirements.txt`
+- `scripts/entrypoint.sh`: Custom entrypoint that handles first-run initialization (installs base modules, loads demo data if `ODOO_LOAD_DEMO=true`, sets admin credentials) and automatic module management via `ODOO_AUTO_INSTALL`, `ODOO_AUTO_UPDATE`, and `ODOO_DEV_MODULES`
+- `scripts/lint.sh`: Code quality verification script (ruff + ty)
+- `config/odoo.conf`: Odoo configuration optimized for development
+- `config/postgresql.conf`: PostgreSQL configuration optimized for performance
 - `.env`: Environment variables for credentials and image versions (copy from `.env.example`)
+- `addons/requirements.txt`: Python dependencies for custom modules (rebuild image after changes)
 
 **Volume Mounts:**
 - `./addons` → `/mnt/extra-addons`: Custom Odoo modules
-- `./odoo.conf` → `/etc/odoo/odoo.conf`: Configuration file
-- `./postgresql.conf` → `/etc/postgresql/postgresql.conf`: Database configuration
-- `./entrypoint.sh` → `/entrypoint.sh`: Initialization script
+- `./config/odoo.conf` → `/etc/odoo/odoo.conf`: Configuration file
+- `./config/postgresql.conf` → `/etc/postgresql/postgresql.conf`: Database configuration
+- `./scripts/entrypoint.sh` → `/entrypoint.sh`: Initialization script
 
 ## Development Workflow
 
@@ -55,6 +62,7 @@ docker compose down -v && docker compose up -d
 **Automatic Module Management (in `.env`):**
 | Variable | Description |
 |----------|-------------|
+| `ODOO_LOAD_DEMO=true` | Load demo data during initial database setup |
 | `ODOO_AUTO_INSTALL=true` | Auto-install new modules from `addons/` not yet installed in Odoo |
 | `ODOO_AUTO_UPDATE=true` | Auto-update modules with files modified after last Odoo update |
 | `ODOO_DEV_MODULES=mod1,mod2` | Always update these modules on restart (manual override) |
@@ -71,20 +79,20 @@ docker compose down -v && docker compose up -d
 
 - Admin credentials (`ODOO_ADMIN_EMAIL`, `ODOO_ADMIN_PASSWORD`) only apply on first initialization
 - `admin_passwd` in odoo.conf is the master password for database management UI
-- Demo data disabled by default (`without_demo = all`)
+- Demo data enabled by default (`ODOO_LOAD_DEMO=true`), set to `false` for empty database
 
 ## Performance Configuration
 
 Configurations are optimized for: **AMD Ryzen 5 5600X (12 threads) + 31GB RAM + SSD**
 
-**Odoo (`odoo.conf`):**
+**Odoo (`config/odoo.conf`):**
 - `workers = 0`: Single-thread mode for easier debugging
 - `limit_memory_soft = 6GB`: Soft memory limit per worker
 - `limit_memory_hard = 8GB`: Hard memory limit per worker
 - `limit_time_cpu = 1800s`: CPU time limit for long operations
 - `limit_time_real = 3600s`: Real time limit for long operations
 
-**PostgreSQL (`postgresql.conf`):**
+**PostgreSQL (`config/postgresql.conf`):**
 - `shared_buffers = 8GB`: Main cache (25% of RAM)
 - `effective_cache_size = 24GB`: OS cache estimate (75% of RAM)
 - `work_mem = 256MB`: Memory for sort/hash operations

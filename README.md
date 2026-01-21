@@ -39,6 +39,8 @@ POSTGRES_CONTAINER_NAME=postgres-17
 POSTGRES_DB=odoo
 POSTGRES_USER=odoo
 POSTGRES_PASSWORD=odoo
+# Carga datos demo al crear base de datos
+ODOO_LOAD_DEMO=true
 
 # Configuración de Odoo
 ODOO_PORT=8069
@@ -57,10 +59,13 @@ La variable `POSTGRES_DB` define el nombre de la base de datos que se creará e 
 
 Las variables `ODOO_ADMIN_EMAIL` y `ODOO_ADMIN_PASSWORD` permiten configurar las credenciales del usuario administrador que se creará durante la inicialización. Estas credenciales serán las que uses para acceder a Odoo por primera vez. Se recomienda cambiar los valores por defecto, especialmente la contraseña, por valores más seguros antes de levantar los servicios por primera vez.
 
+La variable `ODOO_LOAD_DEMO` controla si se cargan datos de demostración durante la inicialización de la base de datos. Si es `true`, Odoo instalará datos de ejemplo (clientes, productos, facturas de muestra, etc.) que son útiles para explorar las funcionalidades del sistema. Si es `false`, la base de datos se inicializará vacía.
+
 Las variables de gestión automática de módulos controlan cómo se manejan los módulos en la carpeta `addons/` al arrancar Odoo:
 
 | Variable | Descripción |
 |----------|-------------|
+| `ODOO_LOAD_DEMO` | Si es `true`, carga datos de demostración al inicializar la base de datos |
 | `ODOO_AUTO_INSTALL` | Si es `true`, instala automáticamente módulos nuevos de `addons/` que no estén instalados en Odoo |
 | `ODOO_AUTO_UPDATE` | Si es `true`, detecta módulos con archivos modificados después de su última actualización en Odoo y los actualiza automáticamente |
 | `ODOO_DEV_MODULES` | Lista de módulos (separados por coma) que se actualizarán SIEMPRE al reiniciar, independientemente de si tienen cambios |
@@ -69,9 +74,9 @@ Esta funcionalidad es especialmente útil cuando trabajas con repositorios compa
 
 ### 3. Dar Permisos al Script de Inicialización
 
-El proyecto incluye un script `entrypoint.sh` que automatiza la inicialización de la base de datos y la configuración del usuario administrador. Antes de levantar los servicios por primera vez, asegúrate de que tenga permisos de ejecución:
+El proyecto incluye un script `scripts/entrypoint.sh` que automatiza la inicialización de la base de datos y la configuración del usuario administrador. Antes de levantar los servicios por primera vez, asegúrate de que tenga permisos de ejecución:
 ```bash
-chmod +x entrypoint.sh
+chmod +x scripts/entrypoint.sh
 ```
 
 ### 4. Levantar los Servicios
@@ -110,16 +115,23 @@ Usa las credenciales que configuraste en el archivo `.env`:
 ```
 odoo18-docker/
 ├── docker-compose.yml          # Configuración de servicios Docker
-├── entrypoint.sh               # Script de inicialización automática
-├── odoo.conf                   # Configuración de Odoo (optimizada)
-├── postgresql.conf             # Configuración de PostgreSQL (optimizada)
+├── Dockerfile                  # Imagen personalizada de Odoo con dependencias
 ├── .env.example                # Plantilla de variables de entorno (público)
 ├── .env                        # Variables locales (privado, no versionado)
 ├── .gitignore                  # Archivos ignorados por Git
 ├── README.md                   # Este archivo
 ├── pyproject.toml              # Configuración de herramientas de desarrollo
 │
+├── config/                     # Archivos de configuración
+│   ├── odoo.conf               # Configuración de Odoo (optimizada)
+│   └── postgresql.conf         # Configuración de PostgreSQL (optimizada)
+│
+├── scripts/                    # Scripts de utilidad
+│   ├── entrypoint.sh           # Script de inicialización automática
+│   └── lint.sh                 # Script de verificación de código
+│
 └── addons/                     # Módulos personalizados de Odoo
+    ├── requirements.txt        # Dependencias Python para módulos personalizados
     └── placeholder_module/     # Módulo mínimo para validar el directorio
         ├── __init__.py
         ├── __manifest__.py
@@ -128,14 +140,15 @@ odoo18-docker/
         └── security/
 ```
 
-### Script de Inicialización (entrypoint.sh)
+### Script de Inicialización (scripts/entrypoint.sh)
 
-El archivo `entrypoint.sh` es un script de bash que automatiza la configuración inicial de Odoo y la gestión de módulos. Su funcionamiento es el siguiente:
+El archivo `scripts/entrypoint.sh` es un script de bash que automatiza la configuración inicial de Odoo y la gestión de módulos. Su funcionamiento es el siguiente:
 
 **Primera ejecución (base de datos vacía):**
 1. Espera a que PostgreSQL esté completamente disponible
-2. Detecta que la base de datos está vacía e instala el módulo base
-3. Configura las credenciales del administrador (`ODOO_ADMIN_EMAIL`, `ODOO_ADMIN_PASSWORD`)
+2. Detecta que la base de datos está vacía e instala los módulos base: `base`, `web`, `contacts`, `mail`, `sale_management`, `purchase`, `stock`, `account`, `crm`, `project`, `hr`
+3. Si `ODOO_LOAD_DEMO=true`, carga datos de demostración junto con los módulos
+4. Configura las credenciales del administrador (`ODOO_ADMIN_EMAIL`, `ODOO_ADMIN_PASSWORD`)
 
 **Cada arranque (gestión automática de módulos):**
 1. Si `ODOO_AUTO_INSTALL=true`: detecta módulos en `addons/` que no estén instalados en Odoo y los instala
@@ -143,6 +156,40 @@ El archivo `entrypoint.sh` es un script de bash que automatiza la configuración
 3. Si `ODOO_DEV_MODULES` contiene módulos, los añade a la lista de actualización
 
 Este enfoque permite una experiencia de "un solo comando" donde ejecutas `docker compose up` y todo se configura automáticamente. Además, facilita el trabajo en equipo: después de un `git pull` con cambios en módulos, un simple `docker compose restart odoo` actualiza automáticamente los módulos modificados.
+
+### Dockerfile e Imagen Personalizada
+
+El proyecto utiliza un `Dockerfile` para crear una imagen personalizada de Odoo que incluye dependencias Python adicionales. La imagen se construye sobre la imagen oficial de Odoo y añade:
+
+1. **Dependencias del sistema**: Librerías necesarias para compilar paquetes Python (como `libgeos-dev`)
+2. **uv**: Gestor de paquetes moderno y rápido para Python (10-100x más rápido que pip)
+3. **Dependencias Python**: Las librerías definidas en `addons/requirements.txt`
+
+Para añadir dependencias Python a tus módulos personalizados:
+
+1. Edita el archivo `addons/requirements.txt`:
+```txt
+# Ejemplo de dependencias
+requests>=2.28.0
+python-dateutil>=2.8.0
+```
+
+2. Reconstruye la imagen:
+```bash
+docker compose build odoo
+```
+
+3. Reinicia los servicios:
+```bash
+docker compose up -d
+```
+
+También puedes hacer ambos pasos en un solo comando:
+```bash
+docker compose up -d --build
+```
+
+**Nota**: Solo necesitas reconstruir la imagen cuando modifiques `requirements.txt` o el `Dockerfile`. Los cambios en código Python de tus módulos solo requieren `docker compose restart odoo`.
 
 ### Carpeta addons
 
@@ -336,7 +383,7 @@ Ahora PyCharm usará tu entorno virtual para autocompletado y análisis de códi
 
 ### 7. Script de Verificación Automatizado
 
-Puedes crear un script `lint.sh` en la raíz del proyecto para automatizar el proceso:
+El proyecto incluye un script `scripts/lint.sh` para automatizar el proceso de verificación:
 ```bash
 #!/bin/bash
 # lint.sh - Script para verificar código
@@ -378,8 +425,8 @@ echo "🎉 ¡Proceso completado!"
 
 Dale permisos de ejecución:
 ```bash
-chmod +x lint.sh
-./lint.sh addons/estate/
+chmod +x scripts/lint.sh
+./scripts/lint.sh addons/estate/
 ```
 
 ### 8. Buenas prácticas para Type Hints
@@ -518,7 +565,7 @@ Las configuraciones de Odoo y PostgreSQL están optimizadas para el siguiente ha
 - **RAM**: 31GB
 - **Almacenamiento**: SSD
 
-### Configuración de Odoo (odoo.conf)
+### Configuración de Odoo (config/odoo.conf)
 
 | Parámetro | Valor | Descripción |
 |-----------|-------|-------------|
@@ -529,7 +576,7 @@ Las configuraciones de Odoo y PostgreSQL están optimizadas para el siguiente ha
 | `limit_time_real` | 3600s | Tiempo real máximo para operaciones largas |
 | `db_maxconn` | 64 | Conexiones máximas a la base de datos |
 
-### Configuración de PostgreSQL (postgresql.conf)
+### Configuración de PostgreSQL (config/postgresql.conf)
 
 | Parámetro | Valor | Descripción |
 |-----------|-------|-------------|
@@ -548,11 +595,11 @@ Si tu hardware difiere significativamente, ajusta estos valores:
 
 **Para menos RAM (ej. 16GB):**
 ```ini
-# odoo.conf
+# config/odoo.conf
 limit_memory_soft = 3221225472    # 3GB
 limit_memory_hard = 4294967296    # 4GB
 
-# postgresql.conf
+# config/postgresql.conf
 shared_buffers = 4GB
 effective_cache_size = 12GB
 work_mem = 128MB
@@ -560,7 +607,7 @@ work_mem = 128MB
 
 **Para más cores (ej. 16 threads):**
 ```ini
-# postgresql.conf
+# config/postgresql.conf
 max_worker_processes = 16
 max_parallel_workers = 16
 max_parallel_workers_per_gather = 6
@@ -568,7 +615,7 @@ max_parallel_workers_per_gather = 6
 
 **Para HDD en lugar de SSD:**
 ```ini
-# postgresql.conf
+# config/postgresql.conf
 random_page_cost = 4.0
 effective_io_concurrency = 2
 ```
@@ -592,7 +639,7 @@ docker compose down && docker compose up -d
 
 **Error "not a valid addons directory"**: La carpeta `addons` debe contener al menos un módulo válido de Odoo (una carpeta con `__manifest__.py`). Asegúrate de que el `placeholder_module` existe o que tienes tu propio módulo creado.
 
-**Error "permission denied" en entrypoint.sh**: Asegúrate de dar permisos de ejecución al script con `chmod +x entrypoint.sh` antes de levantar los servicios.
+**Error "permission denied" en entrypoint.sh**: Asegúrate de dar permisos de ejecución al script con `chmod +x scripts/entrypoint.sh` antes de levantar los servicios.
 
 **Las credenciales no funcionan**: Las credenciales de `ODOO_ADMIN_EMAIL` y `ODOO_ADMIN_PASSWORD` solo se aplican durante la primera inicialización. Si ya habías inicializado la base de datos antes de configurar estas variables, necesitas empezar desde cero con `docker compose down -v` y luego `docker compose up -d`.
 
