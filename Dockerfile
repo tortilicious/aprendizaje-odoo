@@ -13,7 +13,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 # Copy and install Python dependencies
 COPY addons/requirements.txt /tmp/requirements.txt
-RUN uv pip install --system --no-cache -r /tmp/requirements.txt \
+RUN uv pip install --system --break-system-packages --no-cache -r /tmp/requirements.txt \
     && rm /tmp/requirements.txt
 
 USER odoo

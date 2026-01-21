@@ -22,7 +22,12 @@ services:
       - odoo-network
 
   odoo:
-    image: ${ODOO_IMAGE}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ODOO_IMAGE: ${ODOO_IMAGE}
+    image: ${ODOO_CONTAINER_NAME}:custom
     container_name: ${ODOO_CONTAINER_NAME}
     depends_on:
       db:
@@ -60,4 +65,6 @@ networks:
 
 volumes:
   postgres_data:
+    name: postgres_data
   odoo_data:
+    name: odoo_data
